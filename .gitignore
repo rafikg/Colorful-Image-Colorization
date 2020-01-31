@@ -1,0 +1,5 @@
+*.idea
+*.sh
+images/
+*.h5
+logs/
