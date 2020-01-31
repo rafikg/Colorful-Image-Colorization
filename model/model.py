@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from tensorflow.keras.layers import Dense, Conv2D, UpSampling2D, \
-    BatchNormalization
+from tensorflow.keras.layers import(Conv2D, UpSampling2D,
+    BatchNormalization)
 from tensorflow.keras.models import Model
 
 
@@ -155,11 +155,10 @@ class ImageColorizedModel(Model):
         pass
 
 
-model = ImageColorizedModel(loss_object=None, optimizer=None,
-                            train_loss=None)
+if __name__ == '__main__':
+    model = ImageColorizedModel(loss_object=None, optimizer=None,
+                                train_loss=None)
 
-x = np.random.rand(1, 224, 224, 1)
-
-y = model(x)
-
-print(y.shape)
+    x = np.random.rand(1, 224, 224, 1)
+    y = model(x)
+    print(y.shape)
