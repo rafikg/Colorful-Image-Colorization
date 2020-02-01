@@ -3,3 +3,6 @@
 images/
 *.h5
 logs/
+images/
+VOCtrainval_11-May-2012.tar
+VOCtrainval_11-May-2012/
