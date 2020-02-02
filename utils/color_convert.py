@@ -19,18 +19,18 @@ def lab_to_xyz(image: tf.Tensor) -> tf.Tensor:
     """
     l, a, b = tf.unstack(image, axis=-1)
 
-    var_y = (l * 16) / 116
-    var_x = a / 500 + var_y
-    var_z = var_y - b / 200
+    var_y = (l * 16.) / 116.
+    var_x = a / 500. + var_y
+    var_z = var_y - b / 200.
 
     var_y = tf.where(tf.pow(var_y, 3) > 0.008856, tf.pow(var_y, 3),
-                     (var_y - 16 / 116) / 7.787)
+                     (var_y - 16. / 116.) / 7.787)
 
     var_x = tf.where(tf.pow(var_x, 3) > 0.008856, tf.pow(var_x, 3),
-                     (var_x - 16 / 116) / 7.787)
+                     (var_x - 16. / 116.) / 7.787)
 
     var_z = tf.where(tf.pow(var_z, 3) > 0.008856, tf.pow(var_z, 3),
-                     (var_z - 16 / 116) / 7.787)
+                     (var_z - 16. / 116.) / 7.787)
 
     refx = 95.047
     refy = 100.00
@@ -65,15 +65,15 @@ def xyz_to_lab(image: tf.Tensor) -> tf.Tensor:
     var_z = z / refz
 
     var_x = tf.where(var_x > 0.008856, tf.pow(var_x, 1 / 3),
-                     (7.787 * var_x) + (16 / 116))
+                     (7.787 * var_x) + (16. / 116.))
     var_y = tf.where(var_y > 0.008856, tf.pow(var_y, 1 / 3),
-                     (7.787 * var_y) + (16 / 116))
+                     (7.787 * var_y) + (16. / 116.))
     var_z = tf.where(var_z > 0.008856, tf.pow(var_z, 1 / 3),
-                     (7.787 * var_z) + (16 / 116))
+                     (7.787 * var_z) + (16. / 116.))
 
-    l = (116 * var_y) - 16
-    a = 500 * (var_x - var_y)
-    b = 200 * (var_y - var_z)
+    l = (116. * var_y) - 16.
+    a = 500. * (var_x - var_y)
+    b = 200. * (var_y - var_z)
     lab_image = tf.stack([l, a, b], axis=-1)
     return lab_image
 
@@ -84,8 +84,6 @@ def xyz_to_rgb(image: tf.Tensor) -> tf.Tensor:
     Parameters
     ----------
     image: tf.Tensor
-
-
     Returns
     -------
     tf.Tensor: RGB image
@@ -108,9 +106,9 @@ def xyz_to_rgb(image: tf.Tensor) -> tf.Tensor:
     var_b = tf.where(var_b > 0.0031308,
                      1.055 * tf.pow(var_b, (1 / 2.4)) - 0.055,
                      12.92 * var_b)
-    r = var_r * 255
-    g = var_g * 255
-    b = var_b * 255
+    r = var_r * 255.
+    g = var_g * 255.
+    b = var_b * 255.
     rgb_image = tf.stack([r, g, b], axis=-1)
     return rgb_image
 
@@ -155,9 +153,7 @@ def rgb_to_lab(image: tf.Tensor) -> tf.Tensor:
     RGB -> XYZ -> LAB
     Parameters
     ----------
-    r: tf.Tensor
-    g: tf.Tensor
-    b: tf.Tensor
+    image: tf.Tensor
 
     Returns
     -------
@@ -183,21 +179,3 @@ def lab_to_rgb(image: tf.Tensor) -> tf.Tensor:
     xyz = lab_to_xyz(image)
     rgb_image = xyz_to_rgb(xyz)
     return tf.cast(rgb_image, tf.float32)
-
-
-if __name__ == '__main__':
-    import skimage.io as io
-    import matplotlib.pyplot as plt
-
-    image = io.imread('../images/index.jpeg')
-    image_copy = copy.deepcopy(image)
-    lab_image = rgb_to_lab(image_copy)
-    lab_image_copy = copy.deepcopy(lab_image)
-    rgb_image = lab_to_rgb(lab_image_copy)
-
-    print(sum(sum(rgb_image - image)))
-    plt.figure(figsize=(6, 4))
-    _, ax1 = plt.subplots()
-    ax1 = plt.imshow(rgb_image)
-    plt.show()
-
