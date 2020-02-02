@@ -1,34 +1,35 @@
 import tensorflow as tf
+import copy
 
 
 # all functions are implemented based on
 # <http://www.easyrgb.com/en/math.php#text8>
 
 
-def lab_to_xyz(l: tf.Tensor, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+def lab_to_xyz(image: tf.Tensor) -> tf.Tensor:
     """
     Convert an image from LAB color space to XYZ color space
     Parameters
     ----------
-    l: tf.Tensor
-    a: tf.Tensor
-    b : tf.Tensor
+    image: tf.Tensor
 
     Returns
     -------
     tf.Tensor : LAB image
     """
+    l, a, b = tf.unstack(image, axis=-1)
+
     var_y = (l * 16) / 116
     var_x = a / 500 + var_y
     var_z = var_y - b / 200
 
-    var_y = tf.where(var_y > 0.008856, tf.pow(var_y, 3),
+    var_y = tf.where(tf.pow(var_y, 3) > 0.008856, tf.pow(var_y, 3),
                      (var_y - 16 / 116) / 7.787)
 
-    var_x = tf.where(var_x > 0.008856, tf.pow(var_x, 3),
+    var_x = tf.where(tf.pow(var_x, 3) > 0.008856, tf.pow(var_x, 3),
                      (var_x - 16 / 116) / 7.787)
 
-    var_z = tf.where(var_z > 0.008856, tf.pow(var_z, 3),
+    var_z = tf.where(tf.pow(var_z, 3) > 0.008856, tf.pow(var_z, 3),
                      (var_z - 16 / 116) / 7.787)
 
     refx = 95.047
@@ -38,23 +39,58 @@ def lab_to_xyz(l: tf.Tensor, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
     x = var_x * refx
     y = var_y * refy
     z = var_z * ref_z
-    xyz_image = tf.stack([x, y, z])
+    xyz_image = tf.stack([x, y, z], axis=-1)
     return xyz_image
 
 
-def xyz_to_rgb(x: tf.Tensor, y: tf.Tensor, z: tf.Tensor) -> tf.Tensor:
+def xyz_to_lab(image: tf.Tensor) -> tf.Tensor:
+    """
+    Convert an image from XYZ color space to LAB color space
+    Parameters
+    ----------
+    image: tf.Tensor
+
+    Returns
+    -------
+    tf.Tensor : LAB image
+    """
+    x, y, z = tf.unstack(image, axis=-1)
+
+    refx = 95.047
+    refy = 100.00
+    refz = 108.883
+
+    var_x = x / refx
+    var_y = y / refy
+    var_z = z / refz
+
+    var_x = tf.where(var_x > 0.008856, tf.pow(var_x, 1 / 3),
+                     (7.787 * var_x) + (16 / 116))
+    var_y = tf.where(var_y > 0.008856, tf.pow(var_y, 1 / 3),
+                     (7.787 * var_y) + (16 / 116))
+    var_z = tf.where(var_z > 0.008856, tf.pow(var_z, 1 / 3),
+                     (7.787 * var_z) + (16 / 116))
+
+    l = (116 * var_y) - 16
+    a = 500 * (var_x - var_y)
+    b = 200 * (var_y - var_z)
+    lab_image = tf.stack([l, a, b], axis=-1)
+    return lab_image
+
+
+def xyz_to_rgb(image: tf.Tensor) -> tf.Tensor:
     """
     Convert an image from XYZ color space to RGB color space
     Parameters
     ----------
-    x: tf.Tensor
-    y: Tf.Tensor
-    z: tf.Tensor
+    image: tf.Tensor
+
 
     Returns
     -------
     tf.Tensor: RGB image
     """
+    x, y, z = tf.unstack(image, axis=-1)
     var_x = x / 100
     var_y = y / 100
     var_z = z / 100
@@ -75,23 +111,22 @@ def xyz_to_rgb(x: tf.Tensor, y: tf.Tensor, z: tf.Tensor) -> tf.Tensor:
     r = var_r * 255
     g = var_g * 255
     b = var_b * 255
-    rgb_image = tf.stack([r, g, b])
+    rgb_image = tf.stack([r, g, b], axis=-1)
     return rgb_image
 
 
-def rgb_xyz(r: tf.Tensor, g: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+def rgb_xyz(image: tf.Tensor) -> tf.Tensor:
     """
     Convert an image from RGB color space to XYZ color space
     Parameters
     ----------
-    r: tf.Tensor
-    g: tf.Tensor
-    b: tf.Tensor
+    tf.Tensor: tf.Tensor
 
     Returns
     -------
     tf.tensor: XYZ image
     """
+    r, g, b = tf.unstack(image, axis=-1)
     var_r = r / 255
     var_g = g / 255
     var_b = b / 255
@@ -110,11 +145,11 @@ def rgb_xyz(r: tf.Tensor, g: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
     y = var_r * 0.2126 + var_g * 0.7152 + var_b * 0.0722
     z = var_r * 0.0193 + var_g * 0.1192 + var_b * 0.9505
 
-    image_xyz = tf.stack([x, y, z])
+    image_xyz = tf.stack([x, y, z], axis=-1)
     return image_xyz
 
 
-def rgb_to_lab(r: tf.Tensor, g: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+def rgb_to_lab(image: tf.Tensor) -> tf.Tensor:
     """
     Convert an image from RGB color space to LAB color space
     RGB -> XYZ -> LAB
@@ -128,26 +163,41 @@ def rgb_to_lab(r: tf.Tensor, g: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
     -------
     tf.tensor: LAB image
     """
-    xyz = rgb_xyz(r, g, b)
-    x, y, z = tf.unstack(xyz, axis=-1)
-    lab = xyz
+    xyz = rgb_xyz(image)
+    lab_image = xyz_to_lab(xyz)
+    return tf.cast(lab_image, tf.float32)
 
 
-def lab_to_rgb(l: tf.Tensor, a: tf.Tensor, b: tf.Tensor) -> tf.Tensor:
+def lab_to_rgb(image: tf.Tensor) -> tf.Tensor:
     """
     Convert an image from LAB color space to RGB color space
     LAB -> XYZ -> RGB
     Parameters
     ----------
-    l: tf.Tensor
-    a: tf.Tensor
-    b : tf.Tensor
+    image: tf.tensor
 
     Returns
     -------
     tf.Tensor: RGB image
     """
-    xyz = lab_to_xyz(l, a, b)
-    x, y, z = tf.unstack(xyz)
-    rgb = xyz_to_rgb(x, y, z)
-    return rgb
+    xyz = lab_to_xyz(image)
+    rgb_image = xyz_to_rgb(xyz)
+    return tf.cast(rgb_image, tf.float32)
+
+
+if __name__ == '__main__':
+    import skimage.io as io
+    import matplotlib.pyplot as plt
+
+    image = io.imread('../images/index.jpeg')
+    image_copy = copy.deepcopy(image)
+    lab_image = rgb_to_lab(image_copy)
+    lab_image_copy = copy.deepcopy(lab_image)
+    rgb_image = lab_to_rgb(lab_image_copy)
+
+    print(sum(sum(rgb_image - image)))
+    plt.figure(figsize=(6, 4))
+    _, ax1 = plt.subplots()
+    ax1 = plt.imshow(rgb_image)
+    plt.show()
+
