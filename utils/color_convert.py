@@ -19,16 +19,15 @@ def lab_to_xyz(image: tf.Tensor) -> tf.Tensor:
     """
     l, a, b = tf.unstack(image, axis=-1)
 
-    var_y = (l * 16.) / 116.
-    var_x = a / 500. + var_y
-    var_z = var_y - b / 200.
-
-    var_y = tf.where(tf.pow(var_y, 3) > 0.008856, tf.pow(var_y, 3),
-                     (var_y - 16. / 116.) / 7.787)
+    var_y = (l + 16.) / 116
+    var_x = a / 500 + var_y
+    var_z = var_y - b / 200
+    print(var_x, var_y, var_z)
 
     var_x = tf.where(tf.pow(var_x, 3) > 0.008856, tf.pow(var_x, 3),
                      (var_x - 16. / 116.) / 7.787)
-
+    var_y = tf.where(tf.pow(var_y, 3) > 0.008856, tf.pow(var_y, 3),
+                     (var_y - 16. / 116.) / 7.787)
     var_z = tf.where(tf.pow(var_z, 3) > 0.008856, tf.pow(var_z, 3),
                      (var_z - 16. / 116.) / 7.787)
 
@@ -179,3 +178,13 @@ def lab_to_rgb(image: tf.Tensor) -> tf.Tensor:
     xyz = lab_to_xyz(image)
     rgb_image = xyz_to_rgb(xyz)
     return tf.cast(rgb_image, tf.float32)
+
+
+if __name__=='__main__':
+
+    import numpy as np
+    x = np.ones((1,1,3))
+    lab = rgb_to_lab(x)
+    rgb = lab_to_rgb(lab)
+    print(lab)
+    print(rgb)
