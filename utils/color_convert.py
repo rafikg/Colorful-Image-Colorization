@@ -180,10 +180,10 @@ def lab_to_rgb(image: tf.Tensor) -> tf.Tensor:
     return tf.cast(rgb_image, tf.float32)
 
 
-if __name__=='__main__':
-
+if __name__ == '__main__':
     import numpy as np
-    x = np.ones((1,1,3))
+
+    x = np.ones((1, 1, 3))
     lab = rgb_to_lab(x)
     rgb = lab_to_rgb(lab)
     print(lab)
