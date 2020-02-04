@@ -1,5 +1,7 @@
 TF2 implementation of  [Colorful Image Colorization](https://arxiv.org/abs/1603.08511) 
 
+![](assets/Screenshot%20from%202020-02-04%2017-23-41.png)
+
 The workflow normally has to be followed is :
 
 - [x] Build the model.
