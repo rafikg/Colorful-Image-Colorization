@@ -4,7 +4,7 @@ The workflow normally has to be followed is :
 
 - [x] Build the model.
 
-- [ ] Data preparation.
+- [x] Data preparation.
 - [ ] Train the model using Pascal dataset.
 - [ ] Evaluate the model on static image.
 - [ ] Evalaute the model on streaming input.

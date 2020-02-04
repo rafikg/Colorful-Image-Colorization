@@ -2,6 +2,7 @@ import tensorflow as tf
 import glob
 import os
 from utils import rgb_to_lab, get_lightness, get_ab
+from typing import List, Callable, Tuple
 
 
 class ImageReader(object):
@@ -10,9 +11,11 @@ class ImageReader(object):
     tensorflow queue using tf.data.Dataset
     """
 
-    def __init__(self, img_path: str, ext: str = "*.jpg", height=224,
-                 width=224, is_training=True, batch_size=16, n_workers=8,
-                 epochs=100):
+    def __init__(self, img_path: str, ext: str = "*.jpg", height: int = 224,
+                 width: int = 224, is_training: bool = True,
+                 batch_size: int = 16,
+                 n_workers: int = 8,
+                 epochs: int = 100):
         self.imgs_list = self.read_images_list(img_path, ext)
         self.height = height
         self.width = width
@@ -22,7 +25,7 @@ class ImageReader(object):
         self.dataset = self.create_dataset()
         self.epochs = epochs
 
-    def read_images_list(self, imgs_path, ext='*.jpg'):
+    def read_images_list(self, imgs_path: str, ext: str = '*.jpg') -> List:
         """
         Read images list
         Parameters
@@ -31,19 +34,19 @@ class ImageReader(object):
 
         Returns
         -------
-
+        list: image files list
         """
         img_list = []
         for file in glob.glob(os.path.join(imgs_path, ext)):
             img_list.append(file)
         return img_list
 
-    def parse_image(self, image_filename):
+    def parse_image(self, image_filename) -> Tuple[tf.Tensor, tf.Tensor]:
         """
         Read the image file name
         Returns
         -------
-
+        tuple(tf.Tensor, tf.Tensor): rgb raw data
         """
         img_contents = tf.io.read_file(image_filename)
 
@@ -52,12 +55,12 @@ class ImageReader(object):
 
         return img, img
 
-    def create_dataset(self):
+    def create_dataset(self) -> Callable:
         """
         Create tf.data.Dataset
         Returns
         -------
-
+        tf.data.Dataset object
         """
 
         dataset = tf.data.Dataset.from_tensor_slices(
@@ -78,7 +81,8 @@ class ImageReader(object):
 
         return dataset
 
-    def transform_image_label(self, x: tf.Tensor):
+    def transform_image_label(self, x: tf.Tensor) -> Tuple[
+        tf.Tensor, tf.Tensor]:
         """
         Transform image from RGB to lab and return
         L and ab channels
@@ -90,14 +94,15 @@ class ImageReader(object):
 
         Returns
         -------
-
+        tuple(tf.Tensor, tf.Tensor)
         """
         lab = rgb_to_lab(x)
-        x = get_lightness(lab)
-        y = get_ab(lab)
-        return x, y
+        l_channel = get_lightness(lab)
+        ab_channels = get_ab(lab)
+        return l_channel, ab_channels
 
-    def crop_or_pad_image(self, x: tf.Tensor, y: tf.Tensor):
+    def crop_or_pad_image(self, x: tf.Tensor, y: tf.Tensor) -> Tuple[
+        tf.Tensor, tf.Tensor]:
         """
         Random crop or pad x and y image with zero
         Parameters
@@ -107,7 +112,7 @@ class ImageReader(object):
 
         Returns
         -------
-        x, y: tf.Tensor
+        x, y: Tuple(tf.Tensor, tf.Tensor)
         """
         x_shape = tf.shape(x)
         last_dim_x = x_shape[-1]
