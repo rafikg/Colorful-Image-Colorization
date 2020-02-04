@@ -180,6 +180,41 @@ def lab_to_rgb(image: tf.Tensor) -> tf.Tensor:
     return tf.cast(rgb_image, tf.float32)
 
 
+def get_lightness(image: tf.Tensor) -> tf.Tensor:
+    """
+    Get the channel l of the image
+    Parameters
+    ----------
+    image: tf.Tensor
+        image in the LAB color space
+
+    Returns
+    -------
+    lightness (channel l): tf.Tensor
+    """
+
+    l, _, _ = tf.unstack(image, axis=-1)
+    return tf.expand_dims(l, axis=-1)
+
+
+def get_ab(image: tf.Tensor) -> tf.Tensor:
+    """
+    Get the ab channels of the image
+    Parameters
+    ----------
+    image: tf.Tensor
+        image in the LAB color space
+
+    Returns
+    -------
+    ab channels: tf.Tensor
+    """
+    l, a, b = tf.unstack(image, axis=-1)
+
+    ab = tf.stack([a, b], axis=-1)
+    return ab
+
+
 if __name__ == '__main__':
     import numpy as np
 
