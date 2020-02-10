@@ -1,12 +1,9 @@
 import tensorflow as tf
-import datetime
 from tensorflow.keras.layers import (Conv2D, UpSampling2D,
                                      BatchNormalization)
 from tensorflow.keras.models import Model
-from utils import ImageReader
-from quantazation import NUM_CLASSES_Q
-import gc
-
+from quantazation import T, CENTERS, EPSILON, NUM_CLASSES_Q
+from utils import lab_to_rgb
 # Destroys the current TF graph
 tf.keras.backend.clear_session()
 
@@ -166,7 +163,7 @@ class ImageColorizedModel(Model):
         self.optimizer.apply_gradients(zip(gradients, self.trainable_weights))
         self.train_loss(loss)
 
-    def fit(self, dataset, epochs, train_log_dir):
+    def fit(self, dataset, epochs, train_log_dir=None):
         """
         fit the model on the dataset
         Parameters
@@ -181,7 +178,8 @@ class ImageColorizedModel(Model):
         -------
         self: trained model
         """
-        train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+        if train_log_dir:
+            train_summary_writer = tf.summary.create_file_writer(train_log_dir)
         template_step = 'Epoch: {}, step: {}, Loss: {}'
         template_epoch = 'Epoch: {}, Loss: {}'
         for epoch in range(epochs):
@@ -190,39 +188,45 @@ class ImageColorizedModel(Model):
                 print(template_step.format(epoch, step,
                                            self.train_loss.result()))
             print(template_epoch.format(epoch, self.train_loss.result()))
-            with train_summary_writer.as_default():
-                tf.summary.scalar('loss', self.train_loss.result(),
-                                  step=epoch)
+            if train_log_dir:
+                with train_summary_writer.as_default():
+                    tf.summary.scalar('loss', self.train_loss.result(),
+                                      step=epoch)
             # reset the metric for the next epoch
             self.train_loss.reset_states()
 
     def predict(self, x: tf.Tensor):
-        pass
+        """
+        run inference pipeline on input x
+        Parameters
+        ----------
+        x: tf.Tensor
+            L channel of lab color space
 
-    def evaluate(self, x: tf.Tensor, y: tf.Tensor):
-        pass
+        Returns
+        -------
 
+        """
+        _, img_w, img_h, _ = x.shape
+        class_prob = self.__call__(x)
+        q_a = tf.reshape(tf.cast(CENTERS[:, 0], 'float32'), (1, NUM_CLASSES_Q))
+        q_b = tf.reshape(tf.cast(CENTERS[:, 1], 'float32'), (1, NUM_CLASSES_Q))
+        _, w, h, ch = class_prob.shape
+        class_prob = tf.reshape(class_prob, (w * h, NUM_CLASSES_Q))
+        class_prob = tf.exp(tf.math.log(class_prob + EPSILON) / T)
+        class_prob = class_prob / tf.expand_dims(
+            tf.reduce_sum(class_prob, axis=1), axis=1)
+        # Reweight the class_prob
+        im_a_channel = tf.reshape(tf.reduce_sum(class_prob * q_a, axis=1),
+                                  (w, h, 1))
+        im_b_channel = tf.reshape(tf.reduce_sum(class_prob * q_b, axis=1),
+                                  (w, h, 1))
+        # resize a and b channel
+        im_a_channel = tf.image.resize(im_a_channel, (w * 4, h * 4))
+        im_b_channel = tf.image.resize(im_b_channel, (w * 4, h * 4))
 
-if __name__ == '__main__':
-    BATCH_SIZE = 16
-    EPOCHS = 10
-
-    loss_object = tf.keras.losses.CategoricalCrossentropy(name='Cross_entropy')
-    train_loss = tf.keras.metrics.Mean(name='train_loss')
-    optimizer = tf.optimizers.SGD(learning_rate=1e-3)
-
-    # Set up summary writers to write the summaries to disk
-    current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    train_log_dir = '../logs/gradient_tape/' + current_time + '/train'
-
-    img_reader = ImageReader(
-        img_path='../VOCtrainval_11-May-2012/VOCdevkit/VOC2012/JPEGImages',
-        ext="*.jpg", height=256, width=256, is_training=True,
-        batch_size=BATCH_SIZE,
-        n_workers=12, epochs=EPOCHS)
-    dataset = img_reader.dataset
-
-    model = ImageColorizedModel(loss_object=loss_object, optimizer=optimizer,
-                                train_loss=train_loss, is_training=True)
-
-    model.fit(dataset=dataset, epochs=EPOCHS, train_log_dir=train_log_dir)
+        lab = tf.stack(
+            [x[0, :, :, 0], im_a_channel[:, :, 0], im_b_channel[:, :, 0]],
+            axis=-1)
+        rgb = lab_to_rgb(lab)
+        return rgb

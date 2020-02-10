@@ -113,9 +113,6 @@ class ImageReader(object):
         lab = rgb_to_lab(x)
         l_channel = get_lightness(lab)
         ab_channels = get_ab(lab)
-
-        # delete this reference
-        lab = None
         return l_channel, ab_channels
 
     def crop_or_pad_image(self, x: tf.Tensor, y: tf.Tensor) -> Tuple[
@@ -145,8 +142,6 @@ class ImageReader(object):
         y_crop = tf.image.resize(y_crop,
                                  size=(self.target_height,
                                        self.target_width))
-        # delete this reference
-        concat_crop = None
         return x_crop, y_crop
 
     def quantize(self, x: tf.Tensor, y: tf.Tensor):
@@ -168,8 +163,8 @@ class ImageReader(object):
         distances, indices = self.__knn(centers=CENTERS, sample=y, k=5)
         # smooth the distances with a gaussian kernel
         gauss_sigma = 5
-        # TODO inspect this operation (check nan values)
-        # distances = tf.exp(-distances ** 2 / 2 * gauss_sigma ** 2)
+        # # TODO inspect this operation (check nan values)
+        # distances = tf.exp(-distances ** 2 / (2 * gauss_sigma ** 2))
         # Normalize the distances to get probability distribution
         distances = distances / tf.expand_dims(
             tf.reduce_sum(distances, axis=1), -1)
