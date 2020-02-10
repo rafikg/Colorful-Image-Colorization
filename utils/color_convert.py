@@ -1,6 +1,5 @@
 import tensorflow as tf
-import copy
-
+from quantazation import NUM_CLASSES_Q, KNN_NEIGHB
 
 # all functions are implemented based on
 # <http://www.easyrgb.com/en/math.php#text8>
@@ -22,8 +21,6 @@ def lab_to_xyz(image: tf.Tensor) -> tf.Tensor:
     var_y = (l + 16.) / 116
     var_x = a / 500 + var_y
     var_z = var_y - b / 200
-    print(var_x, var_y, var_z)
-
     var_x = tf.where(tf.pow(var_x, 3) > 0.008856, tf.pow(var_x, 3),
                      (var_x - 16. / 116.) / 7.787)
     var_y = tf.where(tf.pow(var_y, 3) > 0.008856, tf.pow(var_y, 3),
@@ -216,10 +213,6 @@ def get_ab(image: tf.Tensor) -> tf.Tensor:
 
 
 if __name__ == '__main__':
-    import numpy as np
+    pass
 
-    x = np.ones((1, 1, 3))
-    lab = rgb_to_lab(x)
-    rgb = lab_to_rgb(lab)
-    print(lab)
-    print(rgb)
+

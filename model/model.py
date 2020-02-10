@@ -1,10 +1,11 @@
 import tensorflow as tf
-import numpy as np
 import datetime
 from tensorflow.keras.layers import (Conv2D, UpSampling2D,
                                      BatchNormalization)
 from tensorflow.keras.models import Model
 from utils import ImageReader
+from quantazation import NUM_CLASSES_Q
+import gc
 
 # Destroys the current TF graph
 tf.keras.backend.clear_session()
@@ -16,7 +17,8 @@ class ImageColorizedModel(Model):
     """
 
     def __init__(self, loss_object, optimizer, train_loss,
-                 num_classes=313, name='ColorfulImage', is_training=True):
+                 num_classes=NUM_CLASSES_Q, name='ColorfulImage',
+                 is_training=True):
         super().__init__(name=name)
         self.loss_object = loss_object
         self.optimizer = optimizer
@@ -92,8 +94,7 @@ class ImageColorizedModel(Model):
                               dilation_rate=1, padding='same')
         self.bn8 = BatchNormalization(trainable=self.is_training)
         self.final_output = Conv2D(num_classes, (1, 1), activation='softmax',
-                             padding='same',
-                             name='pred')
+                                   padding='same', name='pred')
 
     def call(self, x):
         # block1
@@ -158,7 +159,7 @@ class ImageColorizedModel(Model):
         -------
 
         """
-        with tf.GradientTape as tape:
+        with tf.GradientTape() as tape:
             output = self.__call__(x)
             loss = self.loss_object(y, output)
         gradients = tape.gradient(loss, self.trainable_weights)
@@ -181,23 +182,19 @@ class ImageColorizedModel(Model):
         self: trained model
         """
         train_summary_writer = tf.summary.create_file_writer(train_log_dir)
+        template_step = 'Epoch: {}, step: {}, Loss: {}'
+        template_epoch = 'Epoch: {}, Loss: {}'
+        step_i = 0
         for epoch in range(epochs):
             for step, (l, ab) in enumerate(dataset):
-                if epoch == 0 and step == 0:
-                    tf.summary.trace_on(graph=True, profiler=True)
+                step_i += step
                 self.train_one_step(x=l, y=ab)
-                if epoch == 0 and step == 0:
-                    with train_summary_writer.as_default():
-                        tf.summary.trace_export(
-                            name="my_func_trace",
-                            step=0,
-                            profiler_outdir=train_log_dir)
-                    tf.summary.trace_off()
-            template = 'Epoch {}, Loss: {}'
-            print(template.format(epoch + 1, self.train_loss.result()))
-            with train_summary_writer.as_default():
-                tf.summary.scalar('loss', self.train_loss.result(), step=epoch)
-
+                with train_summary_writer.as_default():
+                    tf.summary.scalar('loss', self.train_loss.result(),
+                                      step=step_i)
+                print(template_step.format(epoch, step,
+                                           self.train_loss.result()))
+            print(template_epoch.format(epoch, self.train_loss.result()))
             # reset the metric for the next epoch
             self.train_loss.reset_states()
 
@@ -209,27 +206,25 @@ class ImageColorizedModel(Model):
 
 
 if __name__ == '__main__':
-    BATCH_SIZE = 8
+    BATCH_SIZE = 16
     EPOCHS = 10
 
-    loss_object = tf.keras.losses.MeanSquaredError(name='mse')
+    loss_object = tf.keras.losses.CategoricalCrossentropy(name='Cross_entropy')
     train_loss = tf.keras.metrics.Mean(name='train_loss')
-    optimizer = tf.optimizers.Adam(learning_rate=1e-3, name='ADAM')
+    optimizer = tf.optimizers.SGD(learning_rate=1e-3)
 
     # Set up summary writers to write the summaries to disk
     current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    train_log_dir = 'logs/gradient_tape/' + current_time + '/train'
+    train_log_dir = '../logs/gradient_tape/' + current_time + '/train'
 
     img_reader = ImageReader(
         img_path='../VOCtrainval_11-May-2012/VOCdevkit/VOC2012/JPEGImages',
         ext="*.jpg", height=256, width=256, is_training=True,
         batch_size=BATCH_SIZE,
-        n_workers=8, epochs=EPOCHS)
+        n_workers=12, epochs=EPOCHS)
     dataset = img_reader.dataset
 
     model = ImageColorizedModel(loss_object=loss_object, optimizer=optimizer,
                                 train_loss=train_loss, is_training=True)
-    X = np.random.rand(1, 256, 256, 1)
-    y = model(X)
 
     model.fit(dataset=dataset, epochs=EPOCHS, train_log_dir=train_log_dir)
