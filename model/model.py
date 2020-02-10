@@ -184,17 +184,15 @@ class ImageColorizedModel(Model):
         train_summary_writer = tf.summary.create_file_writer(train_log_dir)
         template_step = 'Epoch: {}, step: {}, Loss: {}'
         template_epoch = 'Epoch: {}, Loss: {}'
-        step_i = 0
         for epoch in range(epochs):
             for step, (l, ab) in enumerate(dataset):
-                step_i += step
                 self.train_one_step(x=l, y=ab)
-                with train_summary_writer.as_default():
-                    tf.summary.scalar('loss', self.train_loss.result(),
-                                      step=step_i)
                 print(template_step.format(epoch, step,
                                            self.train_loss.result()))
             print(template_epoch.format(epoch, self.train_loss.result()))
+            with train_summary_writer.as_default():
+                tf.summary.scalar('loss', self.train_loss.result(),
+                                  step=epoch)
             # reset the metric for the next epoch
             self.train_loss.reset_states()
 
