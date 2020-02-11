@@ -42,10 +42,10 @@ model_tag = '../model_weights/model.{epoch:02d}'
 tensorboard = TensorBoard(log_dir=train_log_dir, histogram_freq=0,
                           write_graph=True, write_images=True,
                           update_freq=10)
-model_checkpoint = ModelCheckpoint(filepath=model_tag, monitor='train_loss',
+model_checkpoint = ModelCheckpoint(filepath=model_tag, monitor='loss',
                                    verbose=1, save_best_only=True)
-reduce_lr = ReduceLROnPlateau(monitor='train_loss', patience=10)
-early_stop = EarlyStopping('train_loss', patience=10)
+reduce_lr = ReduceLROnPlateau(monitor='loss', patience=10)
+early_stop = EarlyStopping('loss', patience=10)
 
 callbacks = [tensorboard, model_checkpoint, reduce_lr, early_stop]
 
