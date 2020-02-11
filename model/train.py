@@ -1,29 +1,53 @@
 import tensorflow as tf
 import datetime
-from utils import ImageReader
+import logging
+from tensorflow.keras.callbacks import (ModelCheckpoint, ReduceLROnPlateau,
+                                        TensorBoard, EarlyStopping)
+
+from data import ColorfulDataset
 from model import ImageColorizedModel
+from config import NUM_CLASSES_Q
 
+logger = logging.getLogger(__name__)
 
-BATCH_SIZE = 16
-EPOCHS = 10
+# Select batch size
+BATCH_SIZE = 32
+# Select epochs
+EPOCHS = 2
 
-loss_object = tf.keras.losses.CategoricalCrossentropy(name='Cross_entropy')
-train_loss = tf.keras.metrics.Mean(name='train_loss')
-optimizer = tf.optimizers.SGD(learning_rate=1e-3)
+# Define the optimizer
+optimizer = tf.optimizers.Adam(learning_rate=3e-5)
 
-# Set up summary writers to write the summaries to disk
+logger.info('Start training')
+
+# Define the dataset object
+dataset_obj = ColorfulDataset(
+    path="../VOCtrainval_11-May-2012/VOCdevkit/VOC2012/JPEGImages/",
+    img_ext="*.jpg",
+    n_workers=8)
+
+dataset = dataset_obj.tf_data
+
+# Define the model
+model = ImageColorizedModel(num_classes=NUM_CLASSES_Q,
+                            is_training=True)
+
+# Compile the model
+model.compile(optimizer=optimizer, loss='categorical_crossentropy')
+
+# Define Callbacks list
 current_time = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-train_log_dir = '../logs/gradient_tape/' + current_time + '/train'
+train_log_dir = '../logs/' + current_time + '/train'
+model_tag = '../model_weights/model.{epoch:02d}'
+tensorboard = TensorBoard(log_dir=train_log_dir, histogram_freq=0,
+                          write_graph=True, write_images=True,
+                          update_freq=10)
+model_checkpoint = ModelCheckpoint(filepath=model_tag, monitor='train_loss',
+                                   verbose=1, save_best_only=True)
+reduce_lr = ReduceLROnPlateau(monitor='train_loss', patience=10)
+early_stop = EarlyStopping('train_loss', patience=10)
 
-img_reader = ImageReader(
-    img_path='../VOCtrainval_11-May-2012/VOCdevkit/VOC2012/JPEGImages',
-    ext="*.jpg", height=256, width=256, is_training=True,
-    batch_size=BATCH_SIZE,
-    n_workers=12, epochs=EPOCHS)
-dataset = img_reader.dataset
+callbacks = [tensorboard, model_checkpoint, reduce_lr, early_stop]
 
-model = ImageColorizedModel(loss_object=loss_object, optimizer=optimizer,
-                            train_loss=train_loss, is_training=True)
-
-model.fit(dataset=dataset, epochs=EPOCHS, train_log_dir=train_log_dir)
-model.save_weights('colorful_model_weoghs.h5')
+# Start training the model
+model.fit(x=dataset, epochs=EPOCHS, callbacks=callbacks)

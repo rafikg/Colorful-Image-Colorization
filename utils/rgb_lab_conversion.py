@@ -1,5 +1,4 @@
 import tensorflow as tf
-from quantazation import NUM_CLASSES_Q, KNN_NEIGHB
 
 # all functions are implemented based on
 # <http://www.easyrgb.com/en/math.php#text8>
@@ -18,9 +17,9 @@ def lab_to_xyz(image: tf.Tensor) -> tf.Tensor:
     """
     l, a, b = tf.unstack(image, axis=-1)
 
-    var_y = (l + 16.) / 116
-    var_x = a / 500 + var_y
-    var_z = var_y - b / 200
+    var_y = (l + 16.) / 116.
+    var_x = a / 500. + var_y
+    var_z = var_y - b / 200.
     var_x = tf.where(tf.pow(var_x, 3) > 0.008856, tf.pow(var_x, 3),
                      (var_x - 16. / 116.) / 7.787)
     var_y = tf.where(tf.pow(var_y, 3) > 0.008856, tf.pow(var_y, 3),
@@ -85,9 +84,9 @@ def xyz_to_rgb(image: tf.Tensor) -> tf.Tensor:
     tf.Tensor: RGB image
     """
     x, y, z = tf.unstack(image, axis=-1)
-    var_x = x / 100
-    var_y = y / 100
-    var_z = z / 100
+    var_x = x / 100.
+    var_y = y / 100.
+    var_z = z / 100.
 
     var_r = var_x * 3.2406 + var_y * -1.5372 + var_z * -0.4986
     var_g = var_x * -0.9689 + var_y * 1.8758 + var_z * 0.0415
@@ -121,9 +120,9 @@ def rgb_xyz(image: tf.Tensor) -> tf.Tensor:
     tf.tensor: XYZ image
     """
     r, g, b = tf.unstack(image, axis=-1)
-    var_r = r / 255
-    var_g = g / 255
-    var_b = b / 255
+    var_r = r / 255.
+    var_g = g / 255.
+    var_b = b / 255.
 
     var_r = tf.where(var_r > 0.04045, tf.pow((var_r + 0.055) / 1.055, 2.4),
                      var_r / 12.92)
@@ -131,9 +130,9 @@ def rgb_xyz(image: tf.Tensor) -> tf.Tensor:
                      var_g / 12.92)
     var_b = tf.where(var_b > 0.04045, tf.pow((var_b + 0.055) / 1.055, 2.4),
                      var_b / 12.92)
-    var_r = var_r * 100
-    var_g = var_g * 100
-    var_b = var_b * 100
+    var_r = var_r * 100.
+    var_g = var_g * 100.
+    var_b = var_b * 100.
 
     x = var_r * 0.4124 + var_g * 0.3576 + var_b * 0.1805
     y = var_r * 0.2126 + var_g * 0.7152 + var_b * 0.0722
@@ -177,7 +176,7 @@ def lab_to_rgb(image: tf.Tensor) -> tf.Tensor:
     return tf.cast(rgb_image, tf.float32)
 
 
-def get_lightness(image: tf.Tensor) -> tf.Tensor:
+def get_lightness_channel(image: tf.Tensor) -> tf.Tensor:
     """
     Get the channel l of the image
     Parameters
@@ -194,9 +193,10 @@ def get_lightness(image: tf.Tensor) -> tf.Tensor:
     return tf.expand_dims(l, axis=-1)
 
 
-def get_ab(image: tf.Tensor) -> tf.Tensor:
+def get_ab_channels(image: tf.Tensor) -> tf.Tensor:
     """
     Get the ab channels of the image
+
     Parameters
     ----------
     image: tf.Tensor
@@ -210,9 +210,3 @@ def get_ab(image: tf.Tensor) -> tf.Tensor:
 
     ab = tf.stack([a, b], axis=-1)
     return ab
-
-
-if __name__ == '__main__':
-    pass
-
-
