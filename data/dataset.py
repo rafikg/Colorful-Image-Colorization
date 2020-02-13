@@ -53,6 +53,16 @@ class ColorfulDataset(object):
         self.imgs_list = self.load_files_list()
         self.tf_data = self.create_dataset()
 
+        # is_validation and is_training should be both true or both false
+        xor = tf.math.logical_xor(
+            self.is_validation,
+            self.is_training,
+            name='train_XOR_valid'
+        )
+        if not xor:
+            raise ValueError(f'dataset should be created either'
+                             f' for training or validation mode')
+
     def load_files_list(self) -> List:
         """
         Get all files paths inside the dataset path
@@ -76,7 +86,7 @@ class ColorfulDataset(object):
 
         # decode the image
         img = tf.image.decode_jpeg(img_contents, channels=3)
-        img = img / 255
+        img = tf.cast(img, dtype=tf.float64)
         return img, img
 
     def create_dataset(self) -> Callable:
@@ -101,7 +111,7 @@ class ColorfulDataset(object):
             dataset = dataset.shuffle(buffer_size=128)
 
         # flip images horizontally
-        if self.is_flip:
+        if self.is_flip and not self.is_validation:
             if tf.random.uniform(shape=(1,)) > 0.5:
                 dataset = dataset.map(lambda x, y: flip(x),
                                       num_parallel_calls=self.n_workers)
@@ -125,7 +135,5 @@ class ColorfulDataset(object):
         if self.is_training:
             dataset = dataset.batch(self.batch_size, drop_remainder=True)
             dataset = dataset.prefetch(buffer_size=1)
-        else:
-            dataset = dataset.batch(1)
 
         return dataset

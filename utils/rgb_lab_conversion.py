@@ -156,7 +156,7 @@ def rgb_to_lab(image: tf.Tensor) -> tf.Tensor:
     """
     xyz = rgb_xyz(image)
     lab_image = xyz_to_lab(xyz)
-    return tf.cast(lab_image, tf.float32)
+    return lab_image
 
 
 def lab_to_rgb(image: tf.Tensor) -> tf.Tensor:
@@ -173,7 +173,7 @@ def lab_to_rgb(image: tf.Tensor) -> tf.Tensor:
     """
     xyz = lab_to_xyz(image)
     rgb_image = xyz_to_rgb(xyz)
-    return tf.cast(rgb_image, tf.float32)
+    return rgb_image
 
 
 def get_lightness_channel(image: tf.Tensor) -> tf.Tensor:
