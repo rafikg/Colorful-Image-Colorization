@@ -3,7 +3,7 @@ from typing import Tuple
 import tensorflow as tf
 from config import NUM_CLASSES_Q, CENTERS
 from utils import rgb_to_lab, get_ab_channels, get_lightness_channel
-
+from data.augmenters import rgb_to_gray
 
 def quantize(x: tf.Tensor, y: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     """
@@ -63,7 +63,6 @@ def nearest_neighbour(centers: tf.Tensor, sample: tf.Tensor, k, n) -> Tuple[
     distances : tf.Tensor
     indx: tf.Tensor
     """
-    centers = tf.cast(centers, 'float32')
     # X^2
     centers_sqr = tf.expand_dims(tf.reduce_sum(tf.pow(centers, 2), axis=1),
                                  axis=0)
@@ -84,7 +83,7 @@ def nearest_neighbour(centers: tf.Tensor, sample: tf.Tensor, k, n) -> Tuple[
     distances = tf.sqrt(centers_sqrR + sample_sqrR - 2 * cross)
 
     # Return top_k distances and indices
-    dist, indx = tf.math.top_k(-1 * distances, k=k, sorted=True)
+    dist, indx = tf.math.top_k(-1 * distances, k=k, sorted=False)
     return -1 * dist, indx
 
 
@@ -101,7 +100,9 @@ def get_l_and_ab_channels(image: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     -------
     tuple(tf.Tensor, tf.Tensor)
     """
+    gray = rgb_to_gray(image) / 255.0
     lab = rgb_to_lab(image)
     l_channel = get_lightness_channel(lab)
     ab_channels = get_ab_channels(lab)
-    return l_channel, ab_channels
+    ab_channels = ab_channels - 128.0
+    return gray, ab_channels

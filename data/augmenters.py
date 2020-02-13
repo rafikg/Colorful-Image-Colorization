@@ -1,6 +1,5 @@
 from typing import Tuple
 import tensorflow as tf
-import copy
 
 
 def crop_or_pad_image(x: tf.Tensor, y: tf.Tensor, in_h: int, in_w: int,
@@ -27,12 +26,14 @@ def crop_or_pad_image(x: tf.Tensor, y: tf.Tensor, in_h: int, in_w: int,
         target_height=in_h,
         target_width=in_w
     )
-
     x_crop = concat_crop[:, :, :last_dim_x]
     y_crop = concat_crop[:, :, last_dim_x:]
-    y_crop = tf.image.resize(y_crop,
-                             size=(out_h,
-                                   out_w))
+    y_crop = tf.cast(tf.image.resize(y_crop,
+                                     size=(out_h,
+                                           out_w),
+                                     method=tf.image.ResizeMethod.BICUBIC),
+                     tf.float64)
+
     return x_crop, y_crop
 
 
@@ -49,3 +50,18 @@ def flip(x: tf.Tensor) -> Tuple[tf.Tensor, tf.Tensor]:
     """
     x = tf.image.flip_left_right(x)
     return x, x
+
+
+def rgb_to_gray(image: tf.Tensor) -> tf.Tensor:
+    """
+    Convert RGB image to gray scale image
+    Parameters
+    ----------
+    image
+
+    Returns
+    -------
+
+    """
+    gray = tf.image.rgb_to_grayscale(image)
+    return gray
