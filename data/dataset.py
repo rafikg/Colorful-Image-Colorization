@@ -132,8 +132,8 @@ class ColorfulDataset(object):
         dataset = dataset.map(lambda x, y: quantize(x=x, y=y),
                               num_parallel_calls=self.n_workers)
 
-        if self.is_training:
-            dataset = dataset.batch(self.batch_size, drop_remainder=True)
-            dataset = dataset.prefetch(buffer_size=1)
+        dataset = dataset.batch(self.batch_size, drop_remainder=True)
+        dataset = dataset.prefetch(buffer_size=1)
+
 
         return dataset
