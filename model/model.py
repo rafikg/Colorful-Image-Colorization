@@ -1,8 +1,13 @@
+from typing import Callable
+
 import tensorflow as tf
-import numpy as np
-from tensorflow.keras.layers import Dense, Conv2D, UpSampling2D, \
-    BatchNormalization
+from tensorflow.keras.layers import (Conv2D, UpSampling2D,
+                                     BatchNormalization)
+from tensorflow.keras.regularizers import l2
 from tensorflow.keras.models import Model
+
+# Destroys the current TF graph
+tf.keras.backend.clear_session()
 
 
 class ImageColorizedModel(Model):
@@ -10,81 +15,149 @@ class ImageColorizedModel(Model):
     Encapsulates the architecture of image colorized network
     """
 
-    def __init__(self, loss_object, optimizer, train_loss,
-                 name='ColorfulImage'):
+    def __init__(self,
+                 num_classes: int,
+                 is_training: bool = True,
+                 l2_reg: Callable = l2(1e-3),
+                 name: str = 'ColorfulImage'):
         super().__init__(name=name)
-        self.loss_object = loss_object
-        self.optimizer = optimizer
-        self.train_loss = train_loss
+        self.is_training = is_training
 
         # block1
         self.conv1_1 = Conv2D(filters=64, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg)
         self.conv1_2 = Conv2D(filters=64, kernel_size=3, strides=2,
-                              dilation_rate=1, padding='same')
-        self.bn1 = BatchNormalization()
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
+        self.bn1 = BatchNormalization(trainable=self.is_training)
 
         # block2
         self.conv2_1 = Conv2D(filters=128, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv2_2 = Conv2D(filters=128, kernel_size=3, strides=2,
-                              dilation_rate=1, padding='same')
-        self.bn2 = BatchNormalization()
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
+        self.bn2 = BatchNormalization(trainable=self.is_training)
 
         # block3
         self.conv3_1 = Conv2D(filters=256, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv3_2 = Conv2D(filters=256, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv3_3 = Conv2D(filters=256, kernel_size=3, strides=2,
-                              dilation_rate=1, padding='same')
-        self.bn3 = BatchNormalization()
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
+        self.bn3 = BatchNormalization(trainable=self.is_training)
 
         # block4
         self.conv4_1 = Conv2D(filters=512, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv4_2 = Conv2D(filters=512, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv4_3 = Conv2D(filters=512, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
-        self.bn4 = BatchNormalization()
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
+        self.bn4 = BatchNormalization(trainable=self.is_training)
 
         # block5
         self.conv5_1 = Conv2D(filters=512, kernel_size=3, strides=1,
-                              dilation_rate=2, padding='same')
+                              dilation_rate=2, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv5_2 = Conv2D(filters=512, kernel_size=3, strides=1,
-                              dilation_rate=2, padding='same')
+                              dilation_rate=2, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv5_3 = Conv2D(filters=512, kernel_size=3, strides=1,
-                              dilation_rate=2, padding='same')
-        self.bn5 = BatchNormalization()
+                              dilation_rate=2, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
+        self.bn5 = BatchNormalization(trainable=self.is_training)
 
         # block6
         self.conv6_1 = Conv2D(filters=512, kernel_size=3, strides=1,
-                              dilation_rate=2, padding='same')
+                              dilation_rate=2, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv6_2 = Conv2D(filters=512, kernel_size=3, strides=1,
-                              dilation_rate=2, padding='same')
+                              dilation_rate=2, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv6_3 = Conv2D(filters=512, kernel_size=3, strides=1,
-                              dilation_rate=2, padding='same')
-        self.bn6 = BatchNormalization()
+                              dilation_rate=2, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
+        self.bn6 = BatchNormalization(trainable=self.is_training)
 
         # block7
         self.conv7_1 = Conv2D(filters=256, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv7_2 = Conv2D(filters=256, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv7_3 = Conv2D(filters=256, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
-        self.bn7 = BatchNormalization()
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
+        self.bn7 = BatchNormalization(trainable=self.is_training)
 
         # block 8
         self.up_samp = UpSampling2D(size=(2, 2))
         self.conv8_1 = Conv2D(filters=128, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv8_2 = Conv2D(filters=128, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
         self.conv8_3 = Conv2D(filters=128, kernel_size=3, strides=1,
-                              dilation_rate=1, padding='same')
-        self.bn8 = BatchNormalization()
+                              dilation_rate=1, padding='same',
+                              kernel_initializer="he_normal",
+                              kernel_regularizer=l2_reg
+                              )
+        self.bn8 = BatchNormalization(trainable=self.is_training)
+        self.final_output = Conv2D(num_classes, (1, 1), activation='softmax',
+                                   padding='same', name='final_output')
 
     def call(self, x):
         # block1
@@ -133,33 +206,5 @@ class ImageColorizedModel(Model):
         x = self.conv8_2(x)
         x = self.conv8_3(x)
         x = self.bn8(x)
+        x = self.final_output(x)
         return x
-
-    @tf.function
-    def train_one_step(self, x):
-        with tf.GradientTape as tape:
-            output = self.__call__(x)
-            loss = self.loss_object(x, output)
-            loss += self.losses + loss
-        gradients = tape.gradient(loss, self.trainable_weights)
-        self.optimizer.apply_gradients(zip(gradients, self.trainable_weights))
-        self.train_loss(loss)
-
-    def fit(self):
-        pass
-
-    def predict(self):
-        pass
-
-    def evaluate(self):
-        pass
-
-
-model = ImageColorizedModel(loss_object=None, optimizer=None,
-                            train_loss=None)
-
-x = np.random.rand(1, 224, 224, 1)
-
-y = model(x)
-
-print(y.shape)

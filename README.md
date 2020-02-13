@@ -1,14 +1,16 @@
 TF2 implementation of  [Colorful Image Colorization](https://arxiv.org/abs/1603.08511) 
 
-The workflow normally has to be followed is 
-1. Build the model.
-2. Data preparation.
-3. Train the model using Pascal dataset.
-4. Evaluate the model on static image.
-5. Evalaute the model on streaming input.
-6. Create an API of the model using `Flask`.
-7. Write the `Dockerfile`
-8. Continous Integration with travis-CI.
+![](assets/Screenshot%20from%202020-02-04%2017-23-41.png)
 
-9. `Extra:` deployment with kubeflow
+The workflow normally has to be followed is :
+
+- [x] Build the model.
+- [x] Data preparation.
+- [x] Train the model using Pascal dataset.
+<!-- - - [ ] Evaluate the model on static image.--<<
+- [ ] Evalaute the model on streaming input.
+- [ ] Create an API of the model using `Flask`.
+- [ ] Write the `Dockerfile`
+- [ ] Continous Integration with travis-CI.
+- [ ] `Extra:` deployment with kubeflow
 
